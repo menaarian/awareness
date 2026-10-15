@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>وردية الأمن – لعبة التوعية الأمنية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8eef1; --panel:#ffffff; --ink:#10232f; --muted:#5a6d79; --line:#d3dde3;
+  --brand:#0e5a6b; --brand-ink:#ffffff;
+  --safe:#13795b; --safe-bg:#dff3ea; --bad:#c2410c; --bad-bg:#fde8dc; --warn:#8a5a00; --warn-bg:#fff1cc;
+  --chip:#eef3f6;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c171e; --panel:#142630; --ink:#e7f0f4; --muted:#93a8b3; --line:#27404d;
+    --brand:#3fb4cc; --brand-ink:#06222b; --safe:#5fd1a5; --safe-bg:#12392d; --bad:#ff9a64; --bad-bg:#42241a;
+    --warn:#f2c46b; --warn-bg:#3c3014; --chip:#1b3340;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c171e; --panel:#142630; --ink:#e7f0f4; --muted:#93a8b3; --line:#27404d;
+  --brand:#3fb4cc; --brand-ink:#06222b; --safe:#5fd1a5; --safe-bg:#12392d; --bad:#ff9a64; --bad-bg:#42241a;
+  --warn:#f2c46b; --warn-bg:#3c3014; --chip:#1b3340;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif;line-height:1.75;font-size:16px;min-height:100vh}
+.wrap{max-width:600px;margin:0 auto;padding:18px 16px 40px}
+h1{font-size:1.5rem;line-height:1.4;margin:0 0 6px;font-weight:700}
+h2{font-size:1.15rem;margin:0 0 8px;font-weight:700}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+button{font-family:inherit;font-size:1rem;cursor:pointer}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.score{font-weight:600;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 14px;font-size:.95rem}
+.track{display:flex;gap:4px;margin-bottom:14px}
+.track i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.track i.now{background:var(--brand)}
+.track i.ok{background:var(--safe)}
+.track i.no{background:var(--bad)}
+
+/* intro / result */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.btn{display:inline-block;border:0;border-radius:10px;padding:12px 22px;font-weight:600;background:var(--brand);color:var(--brand-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.full{width:100%}
+.rules{padding:0;margin:14px 0;list-style:none;display:grid;gap:8px}
+.rules li{background:var(--chip);border-radius:10px;padding:10px 14px}
+
+/* message cards */
+.msg{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.msg .hd{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--chip)}
+.msg .subj{font-weight:700;font-size:1.05rem;margin-bottom:6px}
+.from{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;background:none;border:0;padding:0;color:var(--ink);text-align:right}
+.from .nm{font-weight:600}
+.from .tap{font-size:.8rem;color:var(--brand);border:1px dashed var(--brand);border-radius:999px;padding:0 10px}
+.real{margin-top:6px;font-size:.9rem;direction:ltr;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 10px;display:none;word-break:break-all}
+.real.on{display:block}
+.msg .bd{padding:16px}
+.msg .bd p{margin-bottom:12px}
+.linkbtn{display:inline-block;background:none;border:0;padding:0;color:var(--brand);text-decoration:underline;font-weight:600;text-align:right}
+.att{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:2px 12px;font-size:.9rem;direction:ltr}
+.hint{font-size:.85rem;color:var(--muted);margin:10px 2px 14px}
+
+/* chat */
+.chat{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.chat .hd{padding:12px 16px;background:var(--brand);color:var(--brand-ink)}
+.chat .hd b{display:block}
+.chat .hd small{opacity:.85;direction:ltr;unicode-bidi:plaintext}
+.chat .bd{padding:14px;display:grid;gap:8px;background:var(--chip)}
+.bub{max-width:88%;background:var(--panel);border:1px solid var(--line);border-radius:12px 12px 12px 2px;padding:8px 14px}
+.bub .linkbtn{display:inline}
+
+/* choice */
+.scen{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:12px}
+.opts{display:grid;gap:10px}
+.opt{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 16px;text-align:right;line-height:1.7}
+.opt:hover:not(:disabled){border-color:var(--brand)}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--safe-bg);border-color:var(--safe)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad)}
+.opt .en{direction:ltr;unicode-bidi:plaintext;display:inline-block}
+
+/* decide */
+.decide{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.decide button{border-radius:12px;padding:14px;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+.decide .s:hover:not(:disabled){border-color:var(--safe)}
+.decide .p:hover:not(:disabled){border-color:var(--bad)}
+.decide button:disabled{cursor:default;opacity:.6}
+
+/* feedback */
+.fb{margin-top:14px;border-radius:14px;padding:16px 18px;border:1px solid}
+.fb.ok{background:var(--safe-bg);border-color:var(--safe)}
+.fb.no{background:var(--bad-bg);border-color:var(--bad)}
+.fb h2{margin-bottom:6px}
+.fb ul{margin:8px 0 14px;padding-inline-start:20px}
+.fb li{margin-bottom:4px}
+.tag{display:inline-block;font-size:.8rem;font-weight:700;border-radius:6px;padding:0 8px;margin-inline-start:6px}
+.tag.p{background:var(--bad);color:#fff}
+.tag.s{background:var(--safe);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tag{color:#10232f}}
+
+/* result */
+.big{font-size:3rem;font-weight:700;line-height:1.2;margin:4px 0}
+.rank{display:inline-block;background:var(--brand);color:var(--brand-ink);border-radius:999px;padding:2px 18px;font-weight:700;margin-bottom:10px}
+.miss{border-top:1px solid var(--line);padding:10px 0}
+.miss:first-child{border-top:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){
+  .fb{animation:in .25s ease-out}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ========= إعدادات الشركة – عدّلها حسب الحاجة ========= */
+var DOMAIN = "marcyrl.com";
+var REPORT = "فريق الأمن السيبراني";   // الجهة اللي الموظف يبلغها
+/* ===================================================== */
+
+var ROUNDS = [
+ { kind:"mail", answer:"phish",
+   from:{name:"قسم الحسابات – الشركة المتحدة للأدوية", addr:"accounts@united-pharrna.com"},
+   subject:"عاجل: تغيير الحساب البنكي للشركة",
+   body:["السادة / مارسيرل،","نفيدكم بتغيير حسابنا البنكي ابتداءً من اليوم. برجاء تحويل مستحقات الفاتورة رقم 4471 على الحساب الجديد المرفق.","نرجو التنفيذ قبل نهاية اليوم لتفادي غرامات التأخير."],
+   attach:"bank-details.pdf.exe",
+   tells:["العنوان مكتوب <b>pharrna</b> (r + n) بدل <b>pharma</b> – اللي بيشوف بسرعة مش هياخد باله","تغيير حساب بنك بالإيميل بس هو أشهر أسلوب نصب على الموردين","استعجال: \"قبل نهاية اليوم\"","المرفق امتداده <b>.pdf.exe</b> يعني برنامج مش ملف PDF"],
+   why:"قبل أي تحويل: كلّم المورد على رقمه المحفوظ عندك (مش الرقم اللي في الإيميل) وخلّي المحاسبة تتأكد كمان." },
+
+ { kind:"mail", answer:"safe",
+   from:{name:"فريق الدعم الفني", addr:"it-helpdesk@"+DOMAIN},
+   subject:"صيانة دورية للسيرفرات – الخميس",
+   body:["السلام عليكم،","هيتم عمل صيانة دورية للسيرفرات يوم الخميس من 11 م لـ 1 ص، وممكن البريد يفصل لدقايق.","مفيش أي إجراء مطلوب منكم. لو عندك استفسار كلمنا على الداخلي."],
+   tells:["العنوان من دومين الشركة الحقيقي","مفيش لينك ولا مرفق","مش بيطلب باسورد ولا بيانات","مفيش استعجال ولا تهديد"],
+   why:"الرسالة معلومة بس. القاعدة: لو الإيميل مش بيطلب منك تعمل حاجة (لينك – مرفق – باسورد – فلوس) خطره قليل جداً." },
+
+ { kind:"chat", app:"WhatsApp", answer:"phish",
+   who:"المدير العام", num:"+44 7700 900123",
+   msgs:["صباح الخير، أنا في اجتماع ومش هقدر أتكلم. محتاج منك خدمة سريعة وسرية.","اشتري 5 كروت هدايا (Gift Cards) كل واحد بـ 2000 جنيه وابعتلي صور الأكواد. هرجّعلك فلوسك بعد الاجتماع."],
+   tells:["رقم جديد غير محفوظ، وكود دولة غريب","\"سرّي\" و\"مستعجل\" و\"مش هقدر أتكلم\" – عشان ماتتأكدش","طلب كروت هدايا: فلوس مبتتسترجعش","اسم المدير مجرد اسم عرض، أي حد يقدر يكتبه"],
+   why:"اتصل بالمدير على رقمه المعروف أو اسأل مدير مكتبه. أي طلب فلوس بالرسائل يتأكد منه بمكالمة." },
+
+ { kind:"choice", q:"هتعمل باسورد لحسابك الأساسي. أنهي واحد فيهم هو الأقوى؟", answer:"kahwa",
+   opts:[
+    {id:"mar", t:"Marcyrl@"+new Date().getFullYear(), note:"اسم الشركة + السنة: أول حاجة أي مهاجم بيجربها."},
+    {id:"pw", t:"P@ssw0rd!", note:"استبدال الحروف بأرقام (a→@ ، o→0) معروف وموجود في قوايم التخمين."},
+    {id:"kahwa", t:"kahwa-nakhla-batarya-sellem", note:"طويل + كلمات عشوائية = صعب تخمينه وسهل تفتكره."},
+    {id:"me", t:"Ahmed1990!", note:"اسمك + سنة ميلادك: متاحة في السوشيال ميديا."}],
+   why:"الطول أهم من التعقيد. جملة من 4 كلمات عشوائية أو أكتر أقوى من باسورد قصير مليان رموز. واستخدم مدير باسوردات عشان ماتحفظش كل حاجة." },
+
+ { kind:"chat", app:"رسالة SMS", answer:"phish",
+   who:"شحن-مصر", num:"EG-SHIP",
+   msgs:["شحنتك رقم EG88213 معلّقة بسبب رسوم جمارك 25 جنيه. ادفع الآن لتجنب الإرجاع:"],
+   link:{text:"shipping-eg.top/pay", url:"http://eg-shipment-pay.top/pay/EG88213"},
+   tells:["رسوم صغيرة تدفعها بالكارت من لينك: الهدف سرقة بيانات الكارت","الدومين الحقيقي <b>.top</b> مش شركة شحن","تهديد بالإرجاع عشان تستعجل","مش متأكد إنك منتظر شحنة أصلاً"],
+   why:"لو منتظر شحنة فعلاً، افتح التطبيق الرسمي لشركة الشحن بنفسك. ماتضغطش على اللينك." },
+
+ { kind:"mail", answer:"safe",
+   from:{name:"م. هالة عادل", addr:"hala.adel@"+DOMAIN},
+   subject:"اجتماع مراجعة الجودة – الأحد 10 ص",
+   body:["السلام عليكم،","دعوة لاجتماع مراجعة الجودة يوم الأحد الساعة 10 صباحاً في قاعة الاجتماعات الصغيرة.","الأجندة على البوابة الداخلية زي كل مرة:"],
+   link:{text:"أجندة الاجتماع", url:"https://portal."+DOMAIN+"/qa/agenda"},
+   tells:["المرسل زميل معروف وعنوانه من دومين الشركة","اللينك بيروح على بوابة الشركة الداخلية","الاجتماع متوقع وسياقه منطقي","مفيش استعجال ولا طلب باسورد"],
+   why:"مش كل لينك خطر. اللينك الآمن: دومين معروف + سياق متوقع + من شخص تعرفه. ولو لسه شاكك، كلّم هالة." },
+
+ { kind:"mail", answer:"phish",
+   from:{name:"Microsoft 365", addr:"no-reply@microsft365-support.com"},
+   subject:"الباسورد بتاعك هينتهي النهاردة",
+   body:["حسابك هيتقفل خلال 24 ساعة إلا لو جددت الباسورد.","اضغط على الزر لتجديد الباسورد وتفادي فقدان الإيميلات:"],
+   link:{text:"تجديد الباسورد الآن", url:"https://login-microsoft365.account-verify.support/renew"},
+   tells:["العنوان مكتوب <b>microsft</b> (ناقص حرف o)","اللينك دومينه الحقيقي <b>account-verify.support</b> مش مايكروسوفت","تهديد بقفل الحساب عشان تستعجل","صفحة تسجيل دخول مزيفة هتسرق الباسورد"],
+   why:"الشركات الحقيقية مبتطلبش تجديد باسورد من لينك في إيميل. ادخل على الموقع بنفسك من المتصفح، أو بلّغ " + REPORT + "." },
+
+ { kind:"choice", q:"عرفت إن باسوردك على فيسبوك اتسرّب في اختراق. وإنت بتستخدم نفس الباسورد على إيميل الشغل. تعمل إيه؟", answer:"all",
+   opts:[
+    {id:"fb", t:"أغيّر باسورد فيسبوك بس", note:"الباسورد المسروق لسه شغال على حساب الشغل."},
+    {id:"all", t:"أغيّر باسورد الشغل وأي حساب تاني بنفس الباسورد فوراً، وأفعّل التحقق بخطوتين، وأبلّغ " + REPORT, note:"ده الصح: كل حساب بباسورد مختلف، والتحقق بخطوتين يغطيك لو حصل تسريب."},
+    {id:"no", t:"مفيش مشكلة، فيسبوك حاجة شخصية", note:"المهاجمين بيجربوا الباسورد المسروق على إيميلات الشغل أوتوماتيك (Credential Stuffing)."},
+    {id:"wait", t:"أستنى لو حصلت حاجة غريبة", note:"لما تلاقي حاجة غريبة، الضرر غالباً يكون حصل."}],
+   why:"باسورد مختلف لكل حساب. لو واحد اتسرّب، الباقي يفضلوا آمنين." },
+
+ { kind:"choice", q:"اتصل بيك شخص بيقول إنه من الـ IT: \"في مشكلة في حسابك. قولّي الباسورد عشان أصلحها حالاً\". تعمل إيه؟", answer:"refuse",
+   opts:[
+    {id:"give", t:"أديله الباسورد، هو من الـ IT", note:"الـ IT الحقيقي مبيطلبش الباسورد أبداً."},
+    {id:"refuse", t:"أرفض، وأقفل المكالمة، وأكلّم الـ IT على الرقم الداخلي المعروف وأبلّغ", note:"صح: أنت اللي بتتصل بالرقم الرسمي، مش هو."},
+    {id:"half", t:"أديله أول حروف الباسورد بس", note:"أي جزء من الباسورد بيسهّل التخمين."},
+    {id:"num", t:"أطلب رقمه وأرجعله بعدين وأديله الباسورد", note:"الرقم ممكن يكون مزيف، والمشكلة هي طلب الباسورد نفسه."}],
+   why:"مفيش حد شرعي بيطلب باسوردك أو كود التحقق، حتى لو الاسم والصوت مألوفين." },
+
+ { kind:"choice", q:"وصلك 6 إشعارات موافقة تسجيل دخول على موبايلك في دقيقتين، وإنت مش بتسجل دخول. تعمل إيه؟", answer:"deny",
+   opts:[
+    {id:"ok", t:"أوافق على واحد عشان الإشعارات تبطل", note:"كده سمحت للمهاجم يدخل بحسابك."},
+    {id:"deny", t:"أرفض كلها، أغيّر الباسورد فوراً، وأبلّغ " + REPORT, note:"صح: ده معناه إن حد عارف باسوردك وبيحاول يدخل."},
+    {id:"ign", t:"أتجاهلها", note:"ممكن تضغط بالغلط، وكمان الباسورد بقى مكشوف."},
+    {id:"off", t:"أقفل الموبايل وخلاص", note:"المهاجم هيكمل المحاولات والباسورد لسه مكشوف."}],
+   why:"إشعارات MFA اللي ماطلبتهاش = حد معاه باسوردك. الرفض + تغيير الباسورد + الإبلاغ." }
+];
+
+var app = document.getElementById("app");
+var state;
+
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+
+function intro(){
+  app.innerHTML =
+   '<h1>وردية الأمن</h1>'+
+   '<p class="muted">10 مواقف زي اللي بتحصل في شغلك كل يوم. قرر: سليم ولا فيه مشكلة؟ مش اختبار ومحدش بيشوف نتيجتك.</p>'+
+   '<div class="panel">'+
+   '<h2>قبل ما تبدأ</h2>'+
+   '<ul class="rules">'+
+   '<li>اضغط على <b>اسم المرسل</b> عشان تشوف عنوانه الحقيقي.</li>'+
+   '<li>اضغط على <b>اللينك</b> من غير ما تفتحه عشان تشوف الدومين الحقيقي.</li>'+
+   '<li>بعد كل إجابة هتعرف ليه، وده الأهم.</li>'+
+   '</ul>'+
+   '<button class="btn full" id="go">ابدأ الوردية</button>'+
+   '</div>';
+  document.getElementById("go").onclick=start;
+}
+
+function start(){
+  state={rounds:shuffle(ROUNDS),i:0,score:0,results:[]};
+  show();
+}
+
+function track(){
+  var h='<div class="track" aria-hidden="true">';
+  for(var k=0;k<state.rounds.length;k++){
+    var c = k<state.results.length ? (state.results[k]?'ok':'no') : (k===state.i?'now':'');
+    h+='<i class="'+c+'"></i>';
+  }
+  return h+'</div>';
+}
+function head(){
+  return '<div class="top"><h1 style="font-size:1.1rem;margin:0">الموقف '+(state.i+1)+' من '+state.rounds.length+'</h1><span class="score">'+state.score+' نقطة</span></div>'+track();
+}
+
+function show(){
+  var r=state.rounds[state.i], h=head(), done=false;
+  if(r.kind==="mail") h+=mailHtml(r);
+  else if(r.kind==="chat") h+=chatHtml(r);
+  else h+=choiceHtml(r);
+  h+='<div id="fb" aria-live="polite"></div>';
+  app.innerHTML=h;
+  window.scrollTo(0,0);
+
+  // inspect interactions
+  var f=document.getElementById("from"); if(f) f.onclick=function(){document.getElementById("real").classList.toggle("on")};
+  var l=document.getElementById("lnk"); if(l) l.onclick=function(){var u=document.getElementById("realurl");u.textContent=r.link.url;u.classList.add("on")};
+
+  if(r.kind==="choice"){
+    var btns=app.querySelectorAll(".opt");
+    Array.prototype.forEach.call(btns,function(b){b.onclick=function(){answerChoice(r,b.getAttribute("data-id"))}});
+  }else{
+    document.getElementById("bs").onclick=function(){answerDecide(r,"safe")};
+    document.getElementById("bp").onclick=function(){answerDecide(r,"phish")};
+  }
+}
+
+function mailHtml(r){
+  var body=r.body.map(function(p){return "<p>"+esc(p)+"</p>"}).join("");
+  var link=r.link?'<p><button class="linkbtn" id="lnk">'+esc(r.link.text)+'</button></p><div class="real" id="realurl"></div>':'';
+  var att=r.attach?'<p><span class="att">'+esc(r.attach)+'</span></p>':'';
+  return '<div class="msg"><div class="hd"><div class="subj">'+esc(r.subject)+'</div>'+
+   '<button class="from" id="from"><span class="nm">'+esc(r.from.name)+'</span><span class="tap">اعرض العنوان</span></button>'+
+   '<div class="real" id="real">'+esc(r.from.addr)+'</div></div>'+
+   '<div class="bd">'+body+link+att+'</div></div>'+decideHtml();
+}
+function chatHtml(r){
+  var m=r.msgs.map(function(t,idx){
+    var last=idx===r.msgs.length-1;
+    var l=(last&&r.link)?' <button class="linkbtn" id="lnk">'+esc(r.link.text)+'</button><div class="real" id="realurl"></div>':'';
+    return '<div class="bub">'+esc(t)+l+'</div>';
+  }).join("");
+  return '<div class="chat"><div class="hd"><b>'+esc(r.who)+'</b><small>'+esc(r.num)+' · '+esc(r.app)+'</small></div><div class="bd">'+m+'</div></div>'+decideHtml();
+}
+function decideHtml(){
+  return '<p class="hint">ممكن تضغط على المرسل أو اللينك قبل ما تقرر.</p>'+
+   '<div class="decide"><button class="s" id="bs">سليمة</button><button class="p" id="bp">فيشنج / نصب</button></div>';
+}
+function choiceHtml(r){
+  var o=shuffle(r.opts).map(function(x){return '<button class="opt" data-id="'+x.id+'"><span class="en">'+esc(x.t)+'</span></button>'}).join("");
+  var isEn = r.opts.some(function(x){return /^[\x00-\x7F]+$/.test(x.t)});
+  if(!isEn) o=o.replace(/<span class="en">/g,'<span>');
+  return '<div class="scen"><h2>'+esc(r.q)+'</h2></div><div class="opts">'+o+'</div>';
+}
+
+function answerDecide(r,pick){
+  var ok=pick===r.answer;
+  document.getElementById("bs").disabled=true; document.getElementById("bp").disabled=true;
+  var real=r.answer==="phish";
+  var title=ok?"صح":"غلط";
+  var verdict=real?'الرسالة دي <span class="tag p">فيشنج</span>':'الرسالة دي <span class="tag s">سليمة</span>';
+  var list='<ul>'+r.tells.map(function(t){return "<li>"+t+"</li>"}).join("")+'</ul>';
+  finish(r,ok,'<h2>'+title+'</h2><p>'+verdict+'</p>'+list+'<p><b>اعمل إيه:</b> '+r.why+'</p>', r.why);
+}
+function answerChoice(r,id){
+  var ok=id===r.answer;
+  var btns=app.querySelectorAll(".opt");
+  Array.prototype.forEach.call(btns,function(b){
+    b.disabled=true;
+    var bid=b.getAttribute("data-id");
+    if(bid===r.answer) b.classList.add("right");
+    else if(bid===id) b.classList.add("wrong");
+  });
+  var picked=r.opts.filter(function(x){return x.id===id})[0];
+  var good=r.opts.filter(function(x){return x.id===r.answer})[0];
+  var h='<h2>'+(ok?"صح":"غلط")+'</h2>';
+  if(!ok) h+='<p>'+esc(picked.note)+'</p><p><b>الأصح:</b> '+esc(good.note)+'</p>';
+  else h+='<p>'+esc(good.note)+'</p>';
+  h+='<p><b>القاعدة:</b> '+esc(r.why)+'</p>';
+  finish(r,ok,h,r.why);
+}
+function finish(r,ok,html,rule){
+  state.results.push(ok); if(ok) state.score+=10;
+  r._missed=!ok; if(!ok) state.missed=(state.missed||[]).concat([r]);
+  var last=state.i===state.rounds.length-1;
+  var fb=document.getElementById("fb");
+  fb.innerHTML='<div class="fb '+(ok?'ok':'no')+'">'+html+'<button class="btn" id="nx">'+(last?'شوف نتيجتك':'الموقف الجاي')+'</button></div>';
+  var seg=app.querySelectorAll(".track i")[state.i]; if(seg){seg.className=ok?"ok":"no"}
+  app.querySelector(".score").textContent=state.score+" نقطة";
+  var nx=document.getElementById("nx"); nx.focus({preventScroll:true});
+  fb.scrollIntoView({behavior:"smooth",block:"nearest"});
+  nx.onclick=function(){ if(last) result(); else {state.i++; show();} };
+}
+
+function result(){
+  var s=state.score, c=s/10, rank, line;
+  if(c>=9){rank="حارس الصندوق";line="عينك مش بتفوّت حاجة. شارك اللعبة مع زمايلك."}
+  else if(c>=7){rank="يقظ";line="مستواك كويس. راجع المواقف اللي غلطت فيها."}
+  else if(c>=5){rank="محتاج تركيز";line="في ثغرات ممكن تتستغل. العب تاني بعد ما تراجع القواعد."}
+  else{rank="لسه في أول الطريق";line="مفيش مشكلة، ده الهدف من اللعبة. العب تاني وهتتحسن."}
+  var missed=(state.missed||[]).map(function(m){
+    var t=m.kind==="choice"?m.q:(m.subject||m.who);
+    return '<div class="miss"><b>'+esc(t)+'</b><br><span class="muted">'+esc(m.why)+'</span></div>';
+  }).join("");
+  app.innerHTML=
+   '<div class="panel"><span class="rank">'+rank+'</span>'+
+   '<div class="big">'+s+' / 100</div><p>'+c+' إجابات صح من 10. '+line+'</p></div>'+
+   (missed?'<div class="panel" style="margin-top:12px"><h2>المواقف اللي غلطت فيها</h2>'+missed+'</div>':'')+
+   '<div class="panel" style="margin-top:12px"><h2>4 قواعد تفتكرها</h2><ul class="rules">'+
+   '<li><b>وقّف:</b> أي رسالة فيها استعجال أو تهديد أو طلب فلوس، خد نفَس قبل ما تتصرف.</li>'+
+   '<li><b>افحص:</b> العنوان الحقيقي للمرسل والدومين الحقيقي للينك.</li>'+
+   '<li><b>ماتشاركش:</b> الباسورد وكود التحقق مع أي حد، حتى لو قال إنه من الـ IT.</li>'+
+   '<li><b>بلّغ:</b> أي حاجة مشبوهة لـ '+esc(REPORT)+'. التبليغ مش غلط حتى لو طلعت سليمة.</li></ul></div>'+
+   '<p style="margin-top:14px"><button class="btn full" id="again">العب تاني</button></p>';
+  state.missed=[];
+  document.getElementById("again").onclick=start;
+  window.scrollTo(0,0);
+}
+
+intro();
+</script>
+</body>
+</html>
