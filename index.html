@@ -113,6 +113,12 @@ button{font-family:inherit;font-size:1rem;cursor:pointer}
 .rank{display:inline-block;background:var(--brand);color:var(--brand-ink);border-radius:999px;padding:2px 18px;font-weight:700;margin-bottom:10px}
 .miss{border-top:1px solid var(--line);padding:10px 0}
 .miss:first-child{border-top:0}
+.field{display:block;margin-bottom:12px}
+.field span{display:block;font-weight:600;margin-bottom:4px}
+.field input{width:100%;font-family:inherit;font-size:1rem;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.field input[type=email]{direction:ltr;text-align:left}
+.err{color:var(--bad);font-weight:600;min-height:1.6em;margin:0 0 8px}
+.note{font-size:.85rem;color:var(--muted);margin:10px 0 0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (prefers-reduced-motion: no-preference){
   .fb{animation:in .25s ease-out}
@@ -127,6 +133,8 @@ button{font-family:inherit;font-size:1rem;cursor:pointer}
 /* ========= إعدادات الشركة – عدّلها حسب الحاجة ========= */
 var DOMAIN = "marcyrl.com";
 var REPORT = "فريق الأمن السيبراني";   // الجهة اللي الموظف يبلغها
+var SHEET_URL = "https://script.google.com/macros/s/AKfycbzNdTpd4Elw5zDSxeRg_d58iFmI0NpoxVLswerUVxsQN3eABQAOtshTuIjlT2FW5dUJfw/exec";            // رابط Google Apps Script (Web app) لتسجيل النتايج. سيبه فاضي لو مش عايز تسجيل
+var EMAIL_DOMAIN = "";         // مثال: "marcyrl.com" لقبول إيميلات الشركة بس. سيبه فاضي لقبول أي إيميل
 /* ===================================================== */
 
 var ROUNDS = [
@@ -213,24 +221,50 @@ var state;
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
 
+var player={name:"",email:""};
+try{var sv=JSON.parse(localStorage.getItem("awq_player")||"null"); if(sv&&sv.email){player=sv}}catch(e){}
+
+function send(ev,score){
+  if(!SHEET_URL) return;
+  try{
+    fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({name:player.name,email:player.email,event:ev,score:score})}).catch(function(){});
+  }catch(e){}
+}
+
 function intro(){
   app.innerHTML =
    '<h1>وردية الأمن</h1>'+
-   '<p class="muted">10 مواقف زي اللي بتحصل في شغلك كل يوم. قرر: سليم ولا فيه مشكلة؟ مش اختبار ومحدش بيشوف نتيجتك.</p>'+
+   '<p class="muted">10 مواقف زي اللي بتحصل في شغلك كل يوم. قرر: سليم ولا فيه مشكلة؟</p>'+
    '<div class="panel">'+
-   '<h2>قبل ما تبدأ</h2>'+
+   '<h2>سجّل بياناتك</h2>'+
+   '<label class="field"><span>الاسم</span><input id="pn" type="text" autocomplete="name" maxlength="80" value="'+esc(player.name)+'"></label>'+
+   '<label class="field"><span>الإيميل</span><input id="pe" type="email" autocomplete="email" maxlength="100" placeholder="name@company.com" value="'+esc(player.email)+'"></label>'+
+   '<p class="err" id="er" role="alert"></p>'+
    '<ul class="rules">'+
    '<li>اضغط على <b>اسم المرسل</b> عشان تشوف عنوانه الحقيقي.</li>'+
-   '<li>اضغط على <b>اللينك</b> من غير ما تفتحه عشان تشوف الدومين الحقيقي.</li>'+
+   '<li>اضغط على <b>اللينك</b> عشان تشوف الدومين الحقيقي من غير ما تفتحه.</li>'+
    '<li>بعد كل إجابة هتعرف ليه، وده الأهم.</li>'+
    '</ul>'+
    '<button class="btn full" id="go">ابدأ الوردية</button>'+
+   '<p class="note">اسمك وإيميلك ونتيجتك بتتسجل عشان متابعة المشاركة في التوعية الأمنية.</p>'+
    '</div>';
-  document.getElementById("go").onclick=start;
+  document.getElementById("go").onclick=function(){
+    var n=document.getElementById("pn").value.trim();
+    var m=document.getElementById("pe").value.trim().toLowerCase();
+    var er=document.getElementById("er");
+    if(n.length<2){er.textContent="اكتب اسمك من فضلك.";return}
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)){er.textContent="اكتب إيميل صحيح.";return}
+    if(EMAIL_DOMAIN && m.slice(-(EMAIL_DOMAIN.length+1))!=="@"+EMAIL_DOMAIN.toLowerCase()){er.textContent="استخدم إيميل الشركة (@"+EMAIL_DOMAIN+").";return}
+    player={name:n,email:m};
+    try{localStorage.setItem("awq_player",JSON.stringify(player))}catch(e){}
+    start();
+  };
 }
 
 function start(){
   state={rounds:shuffle(ROUNDS),i:0,score:0,results:[]};
+  send("start");
   show();
 }
 
@@ -336,6 +370,7 @@ function finish(r,ok,html,rule){
 }
 
 function result(){
+  send("finish",state.score);
   var s=state.score, c=s/10, rank, line;
   if(c>=9){rank="حارس الصندوق";line="عينك مش بتفوّت حاجة. شارك اللعبة مع زمايلك."}
   else if(c>=7){rank="يقظ";line="مستواك كويس. راجع المواقف اللي غلطت فيها."}
